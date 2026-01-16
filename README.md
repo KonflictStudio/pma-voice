@@ -142,6 +142,7 @@ The majority of setters are done through player states.
 | [radioChannel](docs/state-getters/stateBagGetters.md)  | Returns the players current radio channel, or 0 for none     | int          |
 | [callChannel](docs/state-getters/stateBagGetters.md)   | Returns the players current call channel, or 0 for none      | int          |
 | [disableRadio](docs/state-getters/stateBagGetters.md)   | Returns if the players radio is currently disabled, or 0 if its not. This is expected to be use as a bitwise, do *not* use a bool | int          |
+| `voiceContext`  | Returns the players current voice context state, or nil if not in a context | table\|nil          |
 
 #### Events
 
@@ -163,6 +164,11 @@ These are events designed for third-party resource integration. These are emitte
 | [setPlayerRadio](docs/server-setters/setPlayerRadio.md)       | Sets the players radio channel       | int, int     |
 | [setPlayerCall](docs/server-setters/setPlayerCall.md)        | Sets the players call channel        | int, int     |
 | [addChannelCheck](docs/server-setters/addChannelCheck.md)      | Adds a channel check to the players radio channel | int, function |
+| [createContext](docs/server-setters/createContext.md)         | Creates (or updates) a voice context | string, table? |
+| [destroyContext](docs/server-setters/destroyContext.md)       | Destroys a voice context             | string |
+| [addContextPlayer](docs/server-setters/addContextPlayer.md)   | Adds a player to a voice context     | string, int, table? |
+| [setContextPlayerState](docs/server-setters/setContextPlayerState.md) | Updates a players state in a voice context | string, int, table |
+| [removeContextPlayer](docs/server-setters/removeContextPlayer.md) | Removes a player from a voice context | string, int |
 
 
 ##### Getters
@@ -177,6 +183,7 @@ You can access the state with `Player(source).state['state bag here']`
 | [callChannel](docs/state-getters/stateBagGetters.md)   | Returns the players current call channel, or 0 for none      | int          |
 | [voiceIntent](docs/state-getters/stateBagGetters.md) | Returns the players current voice intent, either 'speech' or 'music' | string |
 | [disableRadio](docs/state-getters/stateBagGetters.md)   | Returns if the players radio is currently disabled, or 0 if its not. This is expected to be use as a bitwise, do *not* use a bool | int          |
+| `voiceContext`  | Returns the players current voice context state, or nil if not in a context | table\|nil          |
 
 ```ts
 enum DisabledRadioStates {

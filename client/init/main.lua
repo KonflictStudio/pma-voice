@@ -9,10 +9,16 @@ local volumes = {
 	['click_off'] = GetConvarInt('voice_offClickVolume', 3) / 100,
 }
 
+function getVolumeFraction(volumeType)
+	return volumes[volumeType]
+end
+
 radioEnabled, radioPressed, mode = true, false, GetConvarInt('voice_defaultVoiceMode', 2)
 radioData = {}
 callData = {}
 submixIndicies = {}
+contextTargets = {}
+contextOverrides = {}
 --- function setVolume
 --- Toggles the players volume
 ---@param volume number between 0 and 100
@@ -137,21 +143,39 @@ function toggleVoice(plySource, enabled, moduleType)
 	if mutedPlayers[plySource] then return end
 	logger.verbose('[main] Updating %s to talking: %s with submix %s', plySource, enabled, moduleType)
 	local distance = currentTargets[plySource]
-	if enabled and (not distance or distance > 4.0) then
-		print(volumes[moduleType])
-		MumbleSetVolumeOverrideByServerId(plySource, enabled and volumes[moduleType])
+	local contextOverride = contextOverrides and contextOverrides[plySource]
+	local contextVolume = contextOverride and contextOverride.volume or nil
+	local contextEffect = contextOverride and contextOverride.effect or nil
+	if enabled then
+		local volumeToUse = contextVolume
+		if volumeToUse == nil then
+			if not distance or distance > 4.0 then
+				volumeToUse = moduleType and volumes[moduleType]
+			end
+		end
+		if volumeToUse ~= nil then
+			print(volumeToUse)
+			MumbleSetVolumeOverrideByServerId(plySource, volumeToUse)
+		end
 		if GetConvarInt('voice_enableSubmix', 1) == 1 then
-			if moduleType then
-				disableSubmixReset[plySource] = true
-				if submixIndicies[moduleType] then
-					MumbleSetSubmixForServerId(plySource, submixIndicies[moduleType])
+			local shouldApplySubmix = contextEffect ~= nil or volumeToUse ~= nil
+			if shouldApplySubmix then
+				local submixName = moduleType or contextEffect
+				if submixName then
+					disableSubmixReset[plySource] = true
+					if submixIndicies[submixName] then
+						MumbleSetSubmixForServerId(plySource, submixIndicies[submixName])
+					end
+				elseif not contextEffect then
+					restoreDefaultSubmix(plySource)
 				end
-			else
-				restoreDefaultSubmix(plySource)
 			end
 		end
 	elseif not enabled then
-		if GetConvarInt('voice_enableSubmix', 1) == 1 then
+		if contextVolume == nil then
+			MumbleSetVolumeOverrideByServerId(plySource, -1.0)
+		end
+		if GetConvarInt('voice_enableSubmix', 1) == 1 and contextEffect == nil then
 			-- garbage collect it
 			disableSubmixReset[plySource] = nil
 			SetTimeout(250, function()
@@ -160,13 +184,15 @@ function toggleVoice(plySource, enabled, moduleType)
 				end
 			end)
 		end
-		MumbleSetVolumeOverrideByServerId(plySource, -1.0)
 	end
 end
 
 local function updateVolumes(voiceTable, override)
 	for serverId, talking in pairs(voiceTable) do
 		if serverId == playerServerId then goto skip_iter end
+		if contextOverrides and contextOverrides[serverId] and contextOverrides[serverId].volume ~= nil then
+			goto skip_iter
+		end
 		MumbleSetVolumeOverrideByServerId(serverId, talking and override or -1.0)
 		::skip_iter::
 	end
@@ -192,6 +218,9 @@ end
 ---@param targets table expects multiple tables to be sent over
 function addVoiceTargets(...)
 	local targets = { ... }
+	if contextTargets and next(contextTargets) then
+		targets[#targets + 1] = contextTargets
+	end
 	local addedPlayers = {
 		[playerServerId] = true
 	}
@@ -213,6 +242,25 @@ function addVoiceTargets(...)
 	end
 end
 
+local function radioTargetsActive()
+	if not radioPressed then
+		return false
+	end
+	if type(isRadioEnabled) ~= "function" then
+		return false
+	end
+	return isRadioEnabled()
+end
+
+function rebuildVoiceTargets()
+	MumbleClearVoiceTargetPlayers(voiceTarget)
+	if radioTargetsActive() then
+		addVoiceTargets(radioData, callData)
+	else
+		addVoiceTargets(callData)
+	end
+end
+
 --- function playMicClicks
 ---plays the mic click if the player has them enabled.
 ---@param clickType boolean whether to play the 'on' or 'off' click.
@@ -226,9 +274,11 @@ function playMicClicks(clickType)
 end
 
 --- check if player is muted
-exports('isPlayerMuted', function(source)
+function isPlayerMuted(source)
 	return mutedPlayers[source]
-end)
+end
+
+exports('isPlayerMuted', isPlayerMuted)
 
 --- getter for mutedPlayers
 exports('getMutedPlayers', function()

@@ -15,3 +15,14 @@ print(proximity.index) -- prints the index of the proximity as seen in Cfg.voice
 print(proximity.distance) -- prints the distance of the proximity
 print(proximity.mode) -- prints the mode name of the proximity
 ```
+
+## Example for Voice Context
+
+```lua
+local plyState = Player(source).state
+local ctx = plyState.voiceContext
+
+if ctx then
+  print(ctx.contextId, ctx.role, ctx.canTalk)
+end
+```

@@ -35,6 +35,7 @@ function addNearbyPlayers()
 	currentTargets = {}
 	MumbleClearVoiceTargetChannels(voiceTarget)
 	if LocalPlayer.state.disableProximity then return end
+	local localContext = type(getLocalContextState) == "function" and getLocalContextState() or nil
 	MumbleAddVoiceChannelListen(LocalPlayer.state.assignedChannel)
 	MumbleAddVoiceTargetChannel(voiceTarget, LocalPlayer.state.assignedChannel)
 
@@ -53,6 +54,11 @@ function addNearbyPlayers()
 		local serverId = GetPlayerServerId(ply)
 		local shouldAdd, distance = addProximityCheck(ply)
 		if shouldAdd then
+			if type(shouldSkipContextProximity) == "function"
+				and shouldSkipContextProximity(serverId, localContext)
+			then
+				goto skip_loop
+			end
 			-- if distance then
 			-- 	currentTargets[serverId] = distance
 			-- else
@@ -65,6 +71,7 @@ function addNearbyPlayers()
 				MumbleAddVoiceTargetChannel(voiceTarget, channel)
 			end
 		end
+		::skip_loop::
 	end
 end
 

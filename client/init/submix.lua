@@ -1,6 +1,9 @@
 AddStateBagChangeHandler("submix", "", function(bagName, _, value)
 	local tgtId = tonumber(bagName:gsub('player:', ''), 10)
 	if not tgtId then return end
+	if contextOverrides and contextOverrides[tgtId] and contextOverrides[tgtId].effect ~= nil then
+		return
+	end
 	-- We got an invalid submix, discard we don't care about it
 	if value and not submixIndicies[value] then
 		return logger.warn("Player %s applied submix %s but it isn't valid",
