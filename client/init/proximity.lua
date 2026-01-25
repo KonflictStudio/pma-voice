@@ -54,24 +54,22 @@ function addNearbyPlayers()
 		local serverId = GetPlayerServerId(ply)
 		local shouldAdd, distance = addProximityCheck(ply)
 		if shouldAdd then
-			if type(shouldSkipContextProximity) == "function"
+			local shouldSkip = type(shouldSkipContextProximity) == "function"
 				and shouldSkipContextProximity(serverId, localContext)
-			then
-				goto skip_loop
-			end
-			-- if distance then
-			-- 	currentTargets[serverId] = distance
-			-- else
-			-- 	-- backwards compat, maybe remove in v7
-			-- 	currentTargets[serverId] = 15.0
-			-- end
-			-- logger.verbose('Added %s as a voice target', serverId)
-			local channel = MumbleGetVoiceChannelFromServerId(serverId)
-			if channel ~= -1 then
-				MumbleAddVoiceTargetChannel(voiceTarget, channel)
+			if not shouldSkip then
+				-- if distance then
+				-- 	currentTargets[serverId] = distance
+				-- else
+				-- 	-- backwards compat, maybe remove in v7
+				-- 	currentTargets[serverId] = 15.0
+				-- end
+				-- logger.verbose('Added %s as a voice target', serverId)
+				local channel = MumbleGetVoiceChannelFromServerId(serverId)
+				if channel ~= -1 then
+					MumbleAddVoiceTargetChannel(voiceTarget, channel)
+				end
 			end
 		end
-		::skip_loop::
 	end
 end
 

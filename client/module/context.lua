@@ -2,6 +2,8 @@ contextStates = contextStates or {}
 contextTargets = contextTargets or {}
 contextOverrides = contextOverrides or {}
 
+logger.log('[context] Client context module loaded')
+
 local function normalizeVolumeOverride(value)
 	if type(value) ~= 'number' then
 		return nil
@@ -221,20 +223,16 @@ function getLocalContextState()
 	return contextStates[playerServerId]
 end
 
-function isContextProximityBlocked(localContext)
-	return localContext and (localContext.isolateIncoming == true or localContext.isolateOutgoing == true)
-end
-
 function shouldSkipContextProximity(serverId, localContext)
 	local targetState = contextStates[serverId]
 	local sameContext = localContext and targetState and localContext.contextId == targetState.contextId
 	if sameContext then
 		return true
 	end
-	if localContext and localContext.isolateOutgoing and not sameContext then
+	if localContext and localContext.isolateIncoming and not sameContext then
 		return true
 	end
-	if targetState and targetState.isolateIncoming and not sameContext then
+	if targetState and targetState.isolateOutgoing and not sameContext then
 		return true
 	end
 	return false

@@ -1,6 +1,8 @@
 voiceContexts = voiceContexts or {}
 contextPlayers = contextPlayers or {}
 
+logger.log('[context] Server context module loaded')
+
 local function normalizeRole(role)
 	if role == 'participant' or role == 'monitor' then
 		return role
